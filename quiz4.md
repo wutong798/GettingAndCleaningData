@@ -1,7 +1,6 @@
 Week 4 Quiz
 ===========
 
-The due date for this quiz is Sun 4 May 2014 4:30 PM PDT.
 
 Load packages.
 
