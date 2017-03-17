@@ -1,7 +1,6 @@
 Week 2 Quiz
 ===========
 
-The due date for this quiz is Sun 20 Apr 2014 4:30 PM PDT.
 
 Load packages.
 
