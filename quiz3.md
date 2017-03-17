@@ -1,7 +1,7 @@
 Week 3 Quiz
 ===========
 
-The due date for this quiz is Sun 27 Apr 2014 4:30 PM PDT.
+
 
 Load packages.
 
