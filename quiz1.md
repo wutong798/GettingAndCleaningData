@@ -1,7 +1,7 @@
 Week 1 Quiz
 ===========
 
-The due date for this quiz is Sun 13 Apr 2014 4:30 PM PDT.
+
 
 Load packages.
 
