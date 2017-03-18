@@ -119,5 +119,10 @@ row_check2 <- nrow(dt[, .N, by = c("featDomain", "featAcceleration", "featInstru
 
 ##Create a tidy set##
 #####################
+#create a dataset with the average of each variable for each activity and subject
 setkey(dt, subject, activity, featDomain, featAcceleration, featInstrument, featJerk, featMagnitude, featVariable, featAxis)
 dtTidy <- dt[, list(count = .N, average = mean(value)), by = key(dt)]
+#write to a file
+write.table(dtTidy,"tidy_data.txt")
+
+

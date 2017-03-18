@@ -1,6 +1,6 @@
-run_analysis
+﻿run_analysis
 ============
-Last updated 2014-04-17 09:04:14 using R version 3.0.2 (2013-09-25).
+
 
 
 Instructions for project
@@ -18,11 +18,11 @@ Instructions for project
 > 
 > You should create one R script called run_analysis.R that does the following. 
 > 
-> 1. **DONE** Merges the training and the test sets to create one data set.
-> 2. **DONE** Extracts only the measurements on the mean and standard deviation for each measurement.
-> 3. **DONE** Uses descriptive activity names to name the activities in the data set.
-> 4. **DONE** Appropriately labels the data set with descriptive activity names.
-> 5. **DONE** Creates a second, independent tidy data set with the average of each variable for each activity and each subject. 
+> 1.Merges the training and the test sets to create one data set.
+> 2.Extracts only the measurements on the mean and standard deviation for each measurement.
+> 3.Uses descriptive activity names to name the activities in the data set.
+> 4.Appropriately labels the data set with descriptive activity names.
+> 5.Creates a second, independent tidy data set with the average of each variable for each activity and each subject. 
 > 
 > Good luck!
 
@@ -36,14 +36,12 @@ Load packages.
 
 
 ```r
-packages <- c("data.table", "reshape2")
-sapply(packages, require, character.only = TRUE, quietly = TRUE)
+library("data.table")
+library("reshape2")
+library("RCurl")
+library("tidyr")
 ```
 
-```
-## data.table   reshape2 
-##       TRUE       TRUE
-```
 
 
 Set path.
@@ -55,7 +53,8 @@ path
 ```
 
 ```
-## [1] "C:/Users/chanb/Documents/Repositories/Coursera/GettingAndCleaningData/Project"
+setwd("C:/Users/wutong/Documents/GitHub/GettingAndCleaningData_Cousera/Project")
+path <- as.character(getwd())
 ```
 
 
@@ -63,74 +62,36 @@ path
 Get the data
 ------------
 
-Download the file. Put it in the `Data` folder. **This was already done on 2014-04-11; save time and don't evaluate again.**
+Download the file. Put it in the `Project` folder. 
 
 
 ```r
-url <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
+url<- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
 f <- "Dataset.zip"
-if (!file.exists(path)) {
-    dir.create(path)
+if(!file.exists(path)){
+  dir.create(path)
 }
-download.file(url, file.path(path, f))
+if(!file.exists(f)){
+  download.file(url, file.path(path, f))
+}
 ```
 
 
-Unzip the file. **This was already done on 2014-04-11; save time and don't evaluate again.**
+Unzip the file. 
 
 
 ```r
-executable <- file.path("C:", "Program Files (x86)", "7-Zip", "7z.exe")
+executable  <- file.path("C:","Program Files", "7-Zip", "7z.exe")
 parameters <- "x"
-cmd <- paste(paste0("\"", executable, "\""), parameters, paste0("\"", file.path(path, 
-    f), "\""))
+cmd <- paste(paste0("\"", executable, "\""), parameters, paste0("\"", file.path(path, f), "\""))
 system(cmd)
+path_data <- file.path(path, "UCI HAR Dataset")
+if(!file.exists(path_data)){
+  dir.create(path_data)
+}
 ```
 
 
-The archive put the files in a folder named `UCI HAR Dataset`. Set this folder as the input path. List the files here.
-
-
-```r
-pathIn <- file.path(path, "UCI HAR Dataset")
-list.files(pathIn, recursive = TRUE)
-```
-
-```
-##  [1] "activity_labels.txt"                         
-##  [2] "features.txt"                                
-##  [3] "features_info.txt"                           
-##  [4] "README.txt"                                  
-##  [5] "test/Inertial Signals/body_acc_x_test.txt"   
-##  [6] "test/Inertial Signals/body_acc_y_test.txt"   
-##  [7] "test/Inertial Signals/body_acc_z_test.txt"   
-##  [8] "test/Inertial Signals/body_gyro_x_test.txt"  
-##  [9] "test/Inertial Signals/body_gyro_y_test.txt"  
-## [10] "test/Inertial Signals/body_gyro_z_test.txt"  
-## [11] "test/Inertial Signals/total_acc_x_test.txt"  
-## [12] "test/Inertial Signals/total_acc_y_test.txt"  
-## [13] "test/Inertial Signals/total_acc_z_test.txt"  
-## [14] "test/subject_test.txt"                       
-## [15] "test/X_test.txt"                             
-## [16] "test/y_test.txt"                             
-## [17] "train/Inertial Signals/body_acc_x_train.txt" 
-## [18] "train/Inertial Signals/body_acc_y_train.txt" 
-## [19] "train/Inertial Signals/body_acc_z_train.txt" 
-## [20] "train/Inertial Signals/body_gyro_x_train.txt"
-## [21] "train/Inertial Signals/body_gyro_y_train.txt"
-## [22] "train/Inertial Signals/body_gyro_z_train.txt"
-## [23] "train/Inertial Signals/total_acc_x_train.txt"
-## [24] "train/Inertial Signals/total_acc_y_train.txt"
-## [25] "train/Inertial Signals/total_acc_z_train.txt"
-## [26] "train/subject_train.txt"                     
-## [27] "train/X_train.txt"                           
-## [28] "train/y_train.txt"
-```
-
-
-**See the `README.txt` file in C:/Users/chanb/Documents/Repositories/Coursera/GettingAndCleaningData/Project for detailed information on the dataset.**
-
-For the purposes of this project, the files in the `Inertial Signals` folders are not used.
 
 
 Read the files
@@ -139,31 +100,40 @@ Read the files
 Read the subject files.
 
 
+
 ```r
-dtSubjectTrain <- fread(file.path(pathIn, "train", "subject_train.txt"))
-dtSubjectTest <- fread(file.path(pathIn, "test", "subject_test.txt"))
+dtSubjectTrain <- fread(file.path(path_data, "train", "subject_train.txt"))
+dtSubjectTest <- fread(file.path(path_data, "test", "subject_test.txt"))
 ```
 
 
-Read the activity files. For some reason, these are called *label* files in the `README.txt` documentation.
+Read the activity files. 
 
 
 ```r
-dtActivityTrain <- fread(file.path(pathIn, "train", "Y_train.txt"))
-dtActivityTest <- fread(file.path(pathIn, "test", "Y_test.txt"))
+dtActivityTrain <- fread(file.path(path_data, "train", "Y_train.txt"))
+dtActivityTest <- fread(file.path(path_data, "test", "Y_test.txt"))
+```
+The archive put the files in a folder named `UCI HAR Dataset`. Set this folder as the data path. 
+
+
+```r
+path_data <- file.path(path, "UCI HAR Dataset")
+if(!file.exists(path_data)){
+  dir.create(path_data)
+}
 ```
 
-
-Read the data files. `fread` seems to be giving me some trouble reading files. Using a helper function, read the file with `read.table` instead, then convert the resulting data frame to a data table. Return the data table.
+The input data(x data) in format "ANSI",can't read by "fread"
 
 
 ```r
 fileToDataTable <- function(f) {
-    df <- read.table(f)
-    dt <- data.table(df)
+  df <- read.table(f)
+  dt <- data.table(df)
 }
-dtTrain <- fileToDataTable(file.path(pathIn, "train", "X_train.txt"))
-dtTest <- fileToDataTable(file.path(pathIn, "test", "X_test.txt"))
+dtTrain <- fileToDataTable(file.path(path_data, "train", "X_train.txt"))
+dtTest <- fileToDataTable(file.path(path_data, "test", "X_test.txt"))
 ```
 
 
@@ -180,16 +150,10 @@ setnames(dtSubject, "V1", "subject")
 dtActivity <- rbind(dtActivityTrain, dtActivityTest)
 setnames(dtActivity, "V1", "activityNum")
 dt <- rbind(dtTrain, dtTest)
-```
-
-
-Merge columns.
-
-
-```r
 dtSubject <- cbind(dtSubject, dtActivity)
 dt <- cbind(dtSubject, dt)
 ```
+
 
 
 Set key.
@@ -208,7 +172,7 @@ Read the `features.txt` file. This tells which variables in `dt` are measurement
 
 
 ```r
-dtFeatures <- fread(file.path(pathIn, "features.txt"))
+dtFeatures <- fread(file.path(path_data, "features.txt"))
 setnames(dtFeatures, names(dtFeatures), c("featureNum", "featureName"))
 ```
 
@@ -229,19 +193,7 @@ dtFeatures$featureCode <- dtFeatures[, paste0("V", featureNum)]
 head(dtFeatures)
 ```
 
-```
-##    featureNum       featureName featureCode
-## 1:          1 tBodyAcc-mean()-X          V1
-## 2:          2 tBodyAcc-mean()-Y          V2
-## 3:          3 tBodyAcc-mean()-Z          V3
-## 4:          4  tBodyAcc-std()-X          V4
-## 5:          5  tBodyAcc-std()-Y          V5
-## 6:          6  tBodyAcc-std()-Z          V6
-```
 
-```r
-dtFeatures$featureCode
-```
 
 ```
 ##  [1] "V1"   "V2"   "V3"   "V4"   "V5"   "V6"   "V41"  "V42"  "V43"  "V44" 
@@ -271,7 +223,7 @@ Read `activity_labels.txt` file. This will be used to add descriptive names to t
 
 
 ```r
-dtActivityNames <- fread(file.path(pathIn, "activity_labels.txt"))
+dtActivityNames <- fread(file.path(path_data, "activity_labels.txt"))
 setnames(dtActivityNames, names(dtActivityNames), c("activityNum", "activityName"))
 ```
 
@@ -327,28 +279,32 @@ Seperate features from `featureName` using the helper function `grepthis`.
 
 
 ```r
-grepthis <- function(regex) {
-    grepl(regex, dt$feature)
+separate()
+greprows <- function(regex) {
+  grepl(regex, dt$feature)
 }
-## Features with 2 categories
 n <- 2
 y <- matrix(seq(1, n), nrow = n)
-x <- matrix(c(grepthis("^t"), grepthis("^f")), ncol = nrow(y))
+x <- matrix(c(greprows("^t"), greprows("^f")), ncol = nrow(y))
 dt$featDomain <- factor(x %*% y, labels = c("Time", "Freq"))
-x <- matrix(c(grepthis("Acc"), grepthis("Gyro")), ncol = nrow(y))
+x <- matrix(c(greprows("Acc"), greprows("Gyro")), ncol = nrow(y))
 dt$featInstrument <- factor(x %*% y, labels = c("Accelerometer", "Gyroscope"))
-x <- matrix(c(grepthis("BodyAcc"), grepthis("GravityAcc")), ncol = nrow(y))
+x <- matrix(c(greprows("BodyAcc"), greprows("GravityAcc")), ncol = nrow(y))
 dt$featAcceleration <- factor(x %*% y, labels = c(NA, "Body", "Gravity"))
-x <- matrix(c(grepthis("mean()"), grepthis("std()")), ncol = nrow(y))
+x <- matrix(c(greprows("mean()"), greprows("std()")), ncol = nrow(y))
 dt$featVariable <- factor(x %*% y, labels = c("Mean", "SD"))
 ## Features with 1 category
-dt$featJerk <- factor(grepthis("Jerk"), labels = c(NA, "Jerk"))
-dt$featMagnitude <- factor(grepthis("Mag"), labels = c(NA, "Magnitude"))
+dt$featJerk <- factor(greprows("Jerk"), labels = c(NA, "Jerk"))
+dt$featMagnitude <- factor(greprows("Mag"), labels = c(NA, "Magnitude"))
 ## Features with 3 categories
 n <- 3
-y <- matrix(seq(1, n), nrow = n)
-x <- matrix(c(grepthis("-X"), grepthis("-Y"), grepthis("-Z")), ncol = nrow(y))
+y <- matrix(seq(1,5,by =2), nrow = n)
+x <- matrix(c(greprows("-X"), greprows("-Y"), greprows("-Z")), ncol = nrow(y))
 dt$featAxis <- factor(x %*% y, labels = c(NA, "X", "Y", "Z"))
+#compare the row number to check all feature has been counted
+row_check1 <- nrow(dt[, .N, by = c("feature")])
+row_check2 <- nrow(dt[, .N, by = c("featDomain", "featAcceleration", "featInstrument", "featJerk", "featMagnitude", "featVariable", "featAxis")])
+
 ```
 
 
@@ -378,24 +334,12 @@ Create a data set with the average of each variable for each activity and each s
 
 
 ```r
-setkey(dt, subject, activity, featDomain, featAcceleration, featInstrument, 
-    featJerk, featMagnitude, featVariable, featAxis)
+setkey(dt, subject, activity, featDomain, featAcceleration, featInstrument, featJerk, featMagnitude, featVariable, featAxis)
 dtTidy <- dt[, list(count = .N, average = mean(value)), by = key(dt)]
+#write to a file
+write.table(dtTidy,"tidy_data.txt")
 ```
 
+####**Done**
 
-Make codebook.
-
-
-```r
-knit("makeCodebook.Rmd", output = "codebook.md", encoding = "ISO8859-1", quiet = TRUE)
-```
-
-```
-## [1] "codebook.md"
-```
-
-```r
-markdownToHTML("codebook.md", "codebook.html")
-```
 
